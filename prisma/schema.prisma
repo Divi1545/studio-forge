@@ -1,0 +1,9 @@
+// Models arrive in Phase 1 (Universal Asset System). This is scaffolding only.
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
