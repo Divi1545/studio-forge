@@ -1,0 +1,52 @@
+import {
+  User,
+  Mountain,
+  Box,
+  PawPrint,
+  Rows3,
+  Clapperboard,
+  ImageIcon,
+  Video,
+  AudioLines,
+  Mic,
+  Music,
+  FileText,
+  LayoutTemplate,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
+import type { AssetType } from "@/generated/prisma/enums";
+
+export const assetTypeIcon: Record<AssetType, LucideIcon> = {
+  CHARACTER: User,
+  LOCATION: Mountain,
+  PROP: Box,
+  CREATURE: PawPrint,
+  STORYBOARD: Rows3,
+  SCENE: Clapperboard,
+  IMAGE: ImageIcon,
+  VIDEO: Video,
+  AUDIO: AudioLines,
+  VOICE: Mic,
+  MUSIC: Music,
+  SCRIPT: FileText,
+  TEMPLATE: LayoutTemplate,
+  INFLUENCER: Sparkles,
+};
+
+export const assetTypeLabel: Record<AssetType, string> = {
+  CHARACTER: "Character",
+  LOCATION: "Location",
+  PROP: "Prop",
+  CREATURE: "Creature",
+  STORYBOARD: "Storyboard",
+  SCENE: "Scene",
+  IMAGE: "Image",
+  VIDEO: "Video",
+  AUDIO: "Audio",
+  VOICE: "Voice",
+  MUSIC: "Music",
+  SCRIPT: "Script",
+  TEMPLATE: "Template",
+  INFLUENCER: "Influencer",
+};

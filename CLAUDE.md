@@ -34,7 +34,9 @@ Private, self-hosted AI creative production studio owned by AI Code Agency Pvt L
 
 ## Build status
 
-Built in strict sequential phases with a hard stop after each one for approval — see `STUDIOFORGE_MASTER_CURSOR_PROMPT.md` (original spec, kept at repo root) for the full phase map. Current status: **Phase 0 complete** (scaffold, auth, dark shell, storage/Anthropic wrappers, docker-compose). Phases 1–10 not yet started.
+Built in strict sequential phases with a hard stop after each one for approval — see `STUDIOFORGE_MASTER_CURSOR_PROMPT.md` (original spec, kept at repo root) for the full phase map. Current status: **Phase 1 complete** (Phase 0 scaffold/auth/shell, plus the full Prisma schema, universal Asset system, Assets browser, and Projects dashboards). Phases 2–10 not yet started.
+
+Phase 1 was verified against a real throwaway Postgres instance (schema push, seed, and full CRUD round-trips through the API), since this sandbox has no Docker. Run `docker compose up -d postgres redis minio && npm run db:push && npm run db:seed` on a real machine before relying on this.
 
 ## Do NOT
 

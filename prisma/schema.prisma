@@ -1,4 +1,3 @@
-// Models arrive in Phase 1 (Universal Asset System). This is scaffolding only.
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -6,4 +5,255 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum AssetType {
+  CHARACTER
+  LOCATION
+  PROP
+  CREATURE
+  STORYBOARD
+  SCENE
+  IMAGE
+  VIDEO
+  AUDIO
+  VOICE
+  MUSIC
+  SCRIPT
+  TEMPLATE
+  INFLUENCER
+}
+
+enum SceneStatus {
+  DRAFT
+  ASSETS_READY
+  PROMPTED
+  RENDERING
+  REVIEW
+  APPROVED
+}
+
+enum RenderJobType {
+  IMAGE
+  VIDEO
+  AUDIO
+  MUSIC
+  UPSCALE
+  LIPSYNC
+  INTERPOLATE
+}
+
+enum RenderJobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum DirectorRunStatus {
+  PLANNING
+  AWAITING_APPROVAL
+  EXECUTING
+  PAUSED
+  DONE
+  FAILED
+}
+
+enum AppListingType {
+  TEMPLATE
+  CHARACTER_PACK
+  PROMPT_PACK
+  WORKFLOW
+  STYLE
+}
+
+model Project {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?  @db.Text
+  thumbnailUrl String?
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assets       Asset[]
+  folders      Folder[]
+  scenes       Scene[]
+  directorRuns DirectorRun[]
+}
+
+model Asset {
+  id             String   @id @default(cuid())
+  projectId      String?
+  project        Project? @relation(fields: [projectId], references: [id])
+  type           AssetType
+  name           String
+  thumbnailUrl   String?
+  fileUrl        String?
+  prompt         String?  @db.Text
+  negativePrompt String?  @db.Text
+  modelUsed      String?
+  provider       String?
+  tags           String[] @default([])
+  folderId       String?
+  folder         Folder?  @relation(fields: [folderId], references: [id])
+  favorite       Boolean  @default(false)
+  notes          String?  @db.Text
+  metadata       Json?
+  version        Int      @default(1)
+  parentAssetId  String?
+  parentAsset    Asset?   @relation("AssetVersions", fields: [parentAssetId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childVersions  Asset[]  @relation("AssetVersions")
+  createdAt      DateTime @default(now())
+  lastUsedAt     DateTime?
+
+  sceneAssets      SceneAsset[]
+  scenesAsOutput   Scene[]      @relation("SceneOutputVideo")
+  renderJobs       RenderJob[]
+
+  @@index([projectId])
+  @@index([folderId])
+  @@index([type])
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  parentId  String?
+  parent    Folder?  @relation("FolderChildren", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children  Folder[] @relation("FolderChildren")
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+  assets    Asset[]
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([parentId])
+}
+
+model Scene {
+  id       String   @id @default(cuid())
+  projectId String
+  project  Project  @relation(fields: [projectId], references: [id])
+  order    Int
+  title    String
+  script   String?  @db.Text
+  prompt   String?  @db.Text
+  status   SceneStatus @default(DRAFT)
+
+  sceneAssets        SceneAsset[]
+  outputVideoAssetId String?
+  outputVideoAsset   Asset?   @relation("SceneOutputVideo", fields: [outputVideoAssetId], references: [id])
+  durationSec        Int?
+  cameraPreset       String?
+  notes              String?  @db.Text
+  renderJobs         RenderJob[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+model SceneAsset {
+  id      String @id @default(cuid())
+  sceneId String
+  scene   Scene  @relation(fields: [sceneId], references: [id])
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id])
+
+  @@unique([sceneId, assetId])
+}
+
+model RenderJob {
+  id           String          @id @default(cuid())
+  sceneId      String?
+  scene        Scene?          @relation(fields: [sceneId], references: [id])
+  assetId      String?
+  asset        Asset?          @relation(fields: [assetId], references: [id])
+  type         RenderJobType
+  provider     String
+  model        String
+  inputPayload Json
+  status       RenderJobStatus @default(QUEUED)
+  outputUrl    String?
+  costUsd      Decimal         @default(0) @db.Decimal(10, 4)
+  latencyMs    Int?
+  errorMessage String?         @db.Text
+  bullJobId    String?
+  createdAt    DateTime        @default(now())
+  completedAt  DateTime?
+
+  generationLogs GenerationLog[]
+
+  @@index([sceneId])
+  @@index([assetId])
+  @@index([status])
+}
+
+model GenerationLog {
+  id           String     @id @default(cuid())
+  renderJobId  String?
+  renderJob    RenderJob? @relation(fields: [renderJobId], references: [id])
+  provider     String
+  model        String
+  promptTokens Int?
+  outputUnits  Int?
+  costUsd      Decimal    @default(0) @db.Decimal(10, 4)
+  status       String
+  raw          Json?
+  createdAt    DateTime   @default(now())
+
+  @@index([renderJobId])
+}
+
+model DirectorRun {
+  id               String            @id @default(cuid())
+  projectId        String
+  project          Project           @relation(fields: [projectId], references: [id])
+  brief            String            @db.Text
+  plan             Json?
+  status           DirectorRunStatus @default(PLANNING)
+  estimatedCostUsd Decimal?          @db.Decimal(10, 4)
+  actualCostUsd    Decimal?          @db.Decimal(10, 4)
+  currentStep      String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([projectId])
+}
+
+model PromptTemplate {
+  id                   String   @id @default(cuid())
+  module               String
+  name                 String
+  schema               Json
+  compilerInstructions String   @db.Text
+  isBuiltIn            Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([module])
+}
+
+model Plugin {
+  id          String   @id @default(cuid())
+  name        String
+  providerKey String   @unique
+  baseUrl     String?
+  enabled     Boolean  @default(true)
+  config      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AppListing {
+  id           String         @id @default(cuid())
+  name         String
+  description  String?        @db.Text
+  type         AppListingType
+  payload      Json
+  installCount Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 }
