@@ -111,6 +111,7 @@ model Asset {
   sceneAssets      SceneAsset[]
   scenesAsOutput   Scene[]      @relation("SceneOutputVideo")
   renderJobs       RenderJob[]
+  externalTasks    ExternalTask[]
 
   @@index([projectId])
   @@index([folderId])
@@ -256,4 +257,33 @@ model AppListing {
   installCount Int            @default(0)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
+}
+
+enum ExternalTaskStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  COMPLETED
+  FAILED
+}
+
+// Tasks submitted by external systems (Authority13). Never auto-executed —
+// a human approves each one in the UI before any generation spend happens.
+model ExternalTask {
+  id          String             @id @default(cuid())
+  source      String // e.g. "authority13"
+  taskType    String // router task type, e.g. "image.generate", "video.text2video"
+  prompt      String             @db.Text
+  requestedBy String // human-readable requester, e.g. "IslandLoaf director"
+  metadata    Json?
+  status      ExternalTaskStatus @default(PENDING_APPROVAL)
+  assetId     String?
+  asset       Asset?             @relation(fields: [assetId], references: [id])
+  note        String?            @db.Text
+  createdAt   DateTime           @default(now())
+  decidedAt   DateTime?
+  completedAt DateTime?
+
+  @@index([status])
+  @@index([source])
 }
